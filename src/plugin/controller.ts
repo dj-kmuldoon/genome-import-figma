@@ -1,8 +1,9 @@
 import {Matrix} from '../app/modules/SwatchMatrix';
 
-const rootName = 'palette' as String;
-const swatchWidth = 140;
-const swatchHeight = 44;
+const prefix = 'NK';
+const rootName = 'Palette' as String;
+const swatchWidth = 188;
+const swatchHeight = 188;
 const localPaintStyles = figma.getLocalPaintStyles();
 const styleNames = localPaintStyles.map((style) => style.name);
 
@@ -22,9 +23,9 @@ figma.ui.onmessage = async (msg) => {
             let grid = msg.data as Matrix.Grid;
 
             if (!paintStyleExists(grid)) {
-                populateFigmaColorStyles(grid);
                 createPaintStylesBW();
                 createPaintStyleEffects();
+                DJPopulateFigmaColorStyles(grid);
             } else {
                 updateFigmaColorStyles(grid);
             }
@@ -61,9 +62,33 @@ function updateFigmaColorStyles(grid: Matrix.Grid) {
         column.rows.forEach(function (swatch) {
             let paintStyle = getPaintStyleByName(swatch)[0];
             updatePaintStyle(swatch, paintStyle);
-            updateSwatchLabel(swatch);
+            // updateSwatchLabel(swatch);
         });
     });
+}
+
+function DJPopulateFigmaColorStyles(grid: Matrix.Grid) {
+    const nodes = [];
+
+    let offsetX = swatchWidth / 2;
+    let offsetY = 0;
+
+    grid.columns.forEach(function (column, colIdx, colArray) {
+        column.rows.forEach(function (swatch, rowIdx) {
+            nodes.push(createSwatchFrame(swatch, createPaintStyle(swatch), offsetY, offsetX));
+            if (colIdx + 1 === colArray.length) {
+                nodes.push(createTargetLabel(grid.columns[0].rows[rowIdx], offsetY, offsetX));
+            }
+
+            offsetY = offsetY + swatchHeight;
+        });
+
+        offsetX = offsetX + swatchWidth;
+        offsetY = 0;
+    });
+
+    figma.currentPage.selection = nodes;
+    figma.viewport.scrollAndZoomIntoView(nodes);
 }
 
 function populateFigmaColorStyles(grid: Matrix.Grid) {
@@ -114,7 +139,6 @@ function updatePaintStyle(swatch: Matrix.Swatch, style: PaintStyle) {
     const r = style;
     r.description = createPaintStyleDescription(swatch);
     r.paints = [{type: 'SOLID', color: hexToRgb(swatch.hex)}];
-
     return r;
 }
 
@@ -128,12 +152,19 @@ function createPaintStyle(swatch: Matrix.Swatch) {
 
 function createPaintStylesBW() {
     const k = figma.createPaintStyle();
-    k.name = rootName + '/' + 'neutral' + '/' + 'b&w' + '/' + 'black';
+    k.name = createBaseName() + '/' + 'neutral' + '/' + 'b&w' + '/' + 'black';
     k.paints = [{type: 'SOLID', color: hexToRgb('#000000')}];
 
     const w = figma.createPaintStyle();
-    w.name = rootName + '/' + 'neutral' + '/' + 'b&w' + '/' + 'white';
+    w.name = createBaseName() + '/' + 'neutral' + '/' + 'b&w' + '/' + 'white';
     w.paints = [{type: 'SOLID', color: hexToRgb('#FFFFFF')}];
+}
+
+function createBaseName() {
+    if (prefix.length) {
+        return prefix + '-' + rootName;
+    }
+    return rootName;
 }
 
 function createPaintStyleEffects() {
@@ -141,18 +172,17 @@ function createPaintStyleEffects() {
 
     alphas.forEach((alpha) => {
         const a = figma.createPaintStyle();
-        a.name = rootName + '/' + 'alpha' + '/' + 'black' + '/' + 'black' + zeroPad(alpha, 3);
+        a.name = createBaseName() + '/' + 'alpha' + '/' + 'black' + '/' + 'black' + zeroPad(alpha, 3);
         a.paints = [{type: 'SOLID', opacity: alpha / 100, color: hexToRgb('#000000')}];
         a.description = 'black (' + alpha + '% opacity)';
     });
 
     alphas.forEach((alpha) => {
         const a = figma.createPaintStyle();
-        a.name = rootName + '/' + 'alpha' + '/' + 'white' + '/' + 'white' + zeroPad(alpha, 3);
+        a.name = createBaseName() + '/' + 'alpha' + '/' + 'white' + '/' + 'white' + zeroPad(alpha, 3);
         a.paints = [{type: 'SOLID', opacity: alpha / 100, color: hexToRgb('#FFFFFF')}];
         a.description = 'white (' + alpha + '% opacity)';
     });
-
 }
 
 function createWeightLabel(swatch: Matrix.Swatch, offsetY: number) {
@@ -192,6 +222,7 @@ function createSwatchFrame(swatch: Matrix.Swatch, style: PaintStyle, x: number, 
     r.primaryAxisAlignItems = 'CENTER';
     r.counterAxisAlignItems = 'CENTER';
     r.resize(swatchWidth, swatchHeight);
+    r.cornerRadius = 1000;
     r.appendChild(createSwatchLabel(swatch));
     r.x = x;
     r.y = y;
@@ -213,7 +244,7 @@ function createSwatchLabel(swatch: Matrix.Swatch) {
         swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
             ? {family: 'Inter', style: 'Bold'}
             : {family: 'Inter', style: 'Regular'};
-    r.fontSize = 16;
+    r.fontSize = 24;
     r.textAlignHorizontal = 'CENTER';
     r.textAlignVertical = 'CENTER';
     return r;
@@ -235,12 +266,13 @@ function createSemanticLabel(column: Matrix.Column, offsetX: number) {
 }
 
 function createFrameName(swatch: Matrix.Swatch) {
-    return swatch.semantic + swatch.weight.toString()
+    return swatch.semantic + swatch.weight.toString();
 }
 
 function createPaintStyleDescription(swatch: Matrix.Swatch) {
     let r = [];
-    r.push('$' + rootName + '-' + swatch.semantic + '-' + swatch.weight + ' (' + swatch.id + ')' + '\n');
+    // r.push('$' + rootName + '-' + swatch.semantic + '-' + swatch.weight + ' (' + swatch.id + ')' + '\n');
+    r.push('// comment //' + '\n');
     r.push('\n');
     r.push('hex: : ' + swatch.hex.toUpperCase() + '\n');
     r.push('L*: ' + swatch.lightness + ' (' + swatch.l_target + ')' + '\n');
@@ -253,7 +285,7 @@ function createPaintStyleDescription(swatch: Matrix.Swatch) {
 }
 
 function createPaintStyleName(swatch: Matrix.Swatch) {
-    let n = [rootName];
+    let n = [createBaseName()];
     n.push(swatch.semantic);
     n.push(swatch.semantic + swatch.weight.toString());
     return n.join('/');
