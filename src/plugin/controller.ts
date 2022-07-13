@@ -62,7 +62,7 @@ function updateFigmaColorStyles(grid: Matrix.Grid) {
         column.rows.forEach(function (swatch) {
             let paintStyle = getPaintStyleByName(swatch)[0];
             updatePaintStyle(swatch, paintStyle);
-            // updateSwatchLabel(swatch);
+            updateSwatchLabel(swatch);
         });
     });
 }
