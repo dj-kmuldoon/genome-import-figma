@@ -23,9 +23,9 @@ figma.ui.onmessage = async (msg) => {
             let grid = msg.data as Matrix.Grid;
 
             if (!paintStyleExists(grid)) {
+                DJPopulateFigmaColorStyles(grid);
                 createPaintStylesBW();
                 createPaintStyleEffects();
-                DJPopulateFigmaColorStyles(grid);
             } else {
                 updateFigmaColorStyles(grid);
             }
