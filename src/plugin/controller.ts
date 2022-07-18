@@ -1,10 +1,11 @@
+import {rowHeight} from '../app/constants';
 import {Matrix} from '../app/modules/SwatchMatrix';
 
 const prefix = 'NK';
 const rootName = 'Palette' as String;
 const swatchWidth = 188;
 const swatchHeight = 188;
-const rowGutter = 24;
+const rowGutter = 40;
 const colGutter = 268;
 const localPaintStyles = figma.getLocalPaintStyles();
 const styleNames = localPaintStyles.map((style) => style.name);
@@ -45,9 +46,9 @@ function DJPopulateFigmaColorStyles(grid: Matrix.Grid) {
     grid.columns.forEach(function (column, colIdx, colArray) {
         column.rows.forEach(function (swatch, rowIdx) {
             nodes.push(createSwatchFrame(swatch, createPaintStyle(swatch), offsetX, offsetY));
-            if (colIdx + 1 === colArray.length) {
-                nodes.push(createTargetLabel(grid.columns[0].rows[rowIdx], offsetX, offsetY));
-            }
+            // if (colIdx + 1 === colArray.length) {
+            //     nodes.push(createTargetLabel(grid.columns[0].rows[rowIdx], offsetX, offsetY));
+            // }
             offsetX = offsetX + swatchHeight + rowGutter;
         });
 
@@ -170,18 +171,63 @@ function createBaseName() {
 function createPaintStyleEffects() {
     let alphas = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95];
 
-    alphas.forEach((alpha) => {
-        const a = figma.createPaintStyle();
-        a.name = createBaseName() + '/' + 'alpha' + '/' + 'black' + '/' + 'black' + zeroPad(alpha, 3);
-        a.paints = [{type: 'SOLID', opacity: alpha / 100, color: hexToRgb('#000000')}];
-        a.description = 'black (' + alpha + '% opacity)';
-    });
+    // const r = figma.createFrame();
+    // r.name = createFrameName(swatch);
+    // r.fillStyleId = style.id;
+    // r.layoutMode = 'HORIZONTAL';
+    // r.primaryAxisAlignItems = 'CENTER';
+    // r.counterAxisAlignItems = 'CENTER';
+    // r.resize(swatchWidth, swatchHeight);
+    // r.cornerRadius = 1000;
+    // r.appendChild(createSwatchLabel(swatch));
+    // r.x = x;
+    // r.y = y;
 
     alphas.forEach((alpha) => {
-        const a = figma.createPaintStyle();
-        a.name = createBaseName() + '/' + 'alpha' + '/' + 'white' + '/' + 'white' + zeroPad(alpha, 3);
-        a.paints = [{type: 'SOLID', opacity: alpha / 100, color: hexToRgb('#FFFFFF')}];
-        a.description = 'white (' + alpha + '% opacity)';
+        const colorName = 'black';
+        const style = figma.createPaintStyle();
+        style.name = createBaseName() + '/' + 'alpha' + '/' + colorName + '/' + colorName + zeroPad(alpha, 2) + 'a';
+        style.paints = [{type: 'SOLID', opacity: alpha / 100, color: hexToRgb('#000000')}];
+        style.description = 'black (' + alpha + '% opacity)';
+
+        const r = figma.createFrame();
+        r.name = colorName + zeroPad(alpha, 2) + 'a';
+        r.fillStyleId = style.id;
+        r.cornerRadius = 1000;
+        r.resize(swatchWidth, swatchHeight);
+        r.x = offsetX;
+        r.y = offsetY;
+
+        offsetX = offsetX + swatchHeight + rowGutter;
+    });
+
+    offsetX = 0;
+    offsetY = offsetY + 364 - 96 + colGutter;
+
+    const r = figma.createFrame();
+    r.fills = [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
+    r.x = offsetX - 100;
+    r.y = offsetY - 100;
+    r.resize(2668, 488);
+    r.cornerRadius = 120;
+
+    alphas.forEach((alpha) => {
+        const colorName = 'white';
+
+        const style = figma.createPaintStyle();
+        style.name = createBaseName() + '/' + 'alpha' + '/' + colorName + '/' + colorName + zeroPad(alpha, 2) + 'a';
+        style.paints = [{type: 'SOLID', opacity: alpha / 100, color: hexToRgb('#FFFFFF')}];
+        style.description = 'white (' + alpha + '% opacity)';
+
+        const r = figma.createFrame();
+        r.name = colorName + zeroPad(alpha, 2) + 'a';
+        r.fillStyleId = style.id;
+        r.cornerRadius = 1000;
+        r.resize(swatchWidth, swatchHeight);
+        r.x = offsetX;
+        r.y = offsetY;
+
+        offsetX = offsetX + swatchHeight + rowGutter;
     });
 }
 
