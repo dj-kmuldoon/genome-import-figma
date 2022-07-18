@@ -4,8 +4,13 @@ const prefix = 'NK';
 const rootName = 'Palette' as String;
 const swatchWidth = 188;
 const swatchHeight = 188;
+const rowGutter = 24;
+const colGutter = 268;
 const localPaintStyles = figma.getLocalPaintStyles();
 const styleNames = localPaintStyles.map((style) => style.name);
+
+let offsetX = 0;
+let offsetY = 0;
 
 export const hasChildren = (node: BaseNode): node is BaseNode & ChildrenMixin => Boolean(node['children']);
 const zeroPad = (num, places) => String(num).padStart(places, '0');
@@ -34,6 +39,25 @@ figma.ui.onmessage = async (msg) => {
         figma.closePlugin();
     });
 };
+
+function DJPopulateFigmaColorStyles(grid: Matrix.Grid) {
+    const nodes = [];
+    grid.columns.forEach(function (column, colIdx, colArray) {
+        column.rows.forEach(function (swatch, rowIdx) {
+            nodes.push(createSwatchFrame(swatch, createPaintStyle(swatch), offsetX, offsetY));
+            if (colIdx + 1 === colArray.length) {
+                nodes.push(createTargetLabel(grid.columns[0].rows[rowIdx], offsetX, offsetY));
+            }
+            offsetX = offsetX + swatchHeight + rowGutter;
+        });
+
+        offsetX = 0;
+        offsetY = offsetY + swatchWidth + colGutter;
+    });
+
+    figma.currentPage.selection = nodes;
+    figma.viewport.scrollAndZoomIntoView(nodes);
+}
 
 function updateSwatchLabel(swatch: Matrix.Swatch) {
     let name = createFrameName(swatch);
@@ -65,30 +89,6 @@ function updateFigmaColorStyles(grid: Matrix.Grid) {
             updateSwatchLabel(swatch);
         });
     });
-}
-
-function DJPopulateFigmaColorStyles(grid: Matrix.Grid) {
-    const nodes = [];
-
-    let offsetX = swatchWidth / 2;
-    let offsetY = 0;
-
-    grid.columns.forEach(function (column, colIdx, colArray) {
-        column.rows.forEach(function (swatch, rowIdx) {
-            nodes.push(createSwatchFrame(swatch, createPaintStyle(swatch), offsetY, offsetX));
-            if (colIdx + 1 === colArray.length) {
-                nodes.push(createTargetLabel(grid.columns[0].rows[rowIdx], offsetY, offsetX));
-            }
-
-            offsetY = offsetY + swatchHeight;
-        });
-
-        offsetX = offsetX + swatchWidth;
-        offsetY = 0;
-    });
-
-    figma.currentPage.selection = nodes;
-    figma.viewport.scrollAndZoomIntoView(nodes);
 }
 
 function populateFigmaColorStyles(grid: Matrix.Grid) {
