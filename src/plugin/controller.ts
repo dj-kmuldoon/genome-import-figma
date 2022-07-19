@@ -19,6 +19,8 @@ const zeroPad = (num, places) => String(num).padStart(places, '0');
 const loadFonts = async () => {
     await figma.loadFontAsync({family: 'Inter', style: 'Regular'});
     await figma.loadFontAsync({family: 'Inter', style: 'Bold'});
+    await figma.loadFontAsync({family: 'Poppins', style: 'Regular'});
+    await figma.loadFontAsync({family: 'Poppins', style: 'Medium'});
 };
 
 figma.showUI(__html__);
@@ -30,8 +32,8 @@ figma.ui.onmessage = async (msg) => {
 
             if (!paintStyleExists(grid)) {
                 DJPopulateFigmaColorStyles(grid);
-                createPaintStylesBW();
                 createPaintStyleEffects();
+                createPaintStylesBW();
             } else {
                 updateFigmaColorStyles(grid);
             }
@@ -46,9 +48,8 @@ function DJPopulateFigmaColorStyles(grid: Matrix.Grid) {
     grid.columns.forEach(function (column, colIdx, colArray) {
         column.rows.forEach(function (swatch, rowIdx) {
             nodes.push(createSwatchFrame(swatch, createPaintStyle(swatch), offsetX, offsetY));
-            // if (colIdx + 1 === colArray.length) {
-            //     nodes.push(createTargetLabel(grid.columns[0].rows[rowIdx], offsetX, offsetY));
-            // }
+            nodes.push(createSwatchLabelDescription(swatch, offsetX, offsetY + 212));
+            nodes.push(createSwatchLabelHex(swatch, offsetX, offsetY + 259));
             offsetX = offsetX + swatchHeight + rowGutter;
         });
 
@@ -152,13 +153,34 @@ function createPaintStyle(swatch: Matrix.Swatch) {
 }
 
 function createPaintStylesBW() {
+    offsetX = 0;
+    offsetY = offsetY + swatchWidth + colGutter;
+
     const k = figma.createPaintStyle();
     k.name = createBaseName() + '/' + 'neutral' + '/' + 'b&w' + '/' + 'black';
     k.paints = [{type: 'SOLID', color: hexToRgb('#000000')}];
 
+    const r = figma.createFrame();
+    r.name = 'black';
+    r.fillStyleId = k.id;
+    r.cornerRadius = 1000;
+    r.resize(swatchWidth, swatchHeight);
+    r.x = offsetX;
+    r.y = offsetY;
+    offsetX = offsetX + swatchHeight + rowGutter;
+
     const w = figma.createPaintStyle();
     w.name = createBaseName() + '/' + 'neutral' + '/' + 'b&w' + '/' + 'white';
     w.paints = [{type: 'SOLID', color: hexToRgb('#FFFFFF')}];
+
+    const rw = figma.createFrame();
+    rw.name = 'white';
+    rw.fillStyleId = w.id;
+    rw.cornerRadius = 1000;
+    rw.resize(swatchWidth, swatchHeight);
+    rw.x = offsetX;
+    rw.y = offsetY;
+    offsetX = offsetX + swatchHeight + rowGutter;
 }
 
 function createBaseName() {
@@ -170,18 +192,6 @@ function createBaseName() {
 
 function createPaintStyleEffects() {
     let alphas = [5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 95];
-
-    // const r = figma.createFrame();
-    // r.name = createFrameName(swatch);
-    // r.fillStyleId = style.id;
-    // r.layoutMode = 'HORIZONTAL';
-    // r.primaryAxisAlignItems = 'CENTER';
-    // r.counterAxisAlignItems = 'CENTER';
-    // r.resize(swatchWidth, swatchHeight);
-    // r.cornerRadius = 1000;
-    // r.appendChild(createSwatchLabel(swatch));
-    // r.x = x;
-    // r.y = y;
 
     alphas.forEach((alpha) => {
         const colorName = 'black';
@@ -272,6 +282,53 @@ function createSwatchFrame(swatch: Matrix.Swatch, style: PaintStyle, x: number, 
     r.appendChild(createSwatchLabel(swatch));
     r.x = x;
     r.y = y;
+    return r;
+}
+
+function createSwatchLabelDescription(swatch: Matrix.Swatch, offsetX: number, offsetY: number) {
+    const r = figma.createText();
+    r.characters = swatch.semantic + swatch.weight.toString();
+    r.name = 'label1_' + swatch.id;
+    r.fontName = {family: 'Poppins', style: 'Medium'};
+    r.resize(swatchWidth, 36);
+    r.x = offsetX;
+    r.y = offsetY;
+    // r.fills =
+    //     swatch.WCAG2_W_45 || swatch.WCAG2_W_30
+    //         ? [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]
+    //         : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
+    // r.fontName =
+    //     swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
+    //         ? {family: 'Inter', style: 'Bold'}
+    //         : {family: 'Inter', style: 'Regular'};
+    r.fontSize = 20;
+    r.textAlignHorizontal = 'CENTER';
+    r.textAlignVertical = 'CENTER';
+    return r;
+}
+
+function createSwatchLabelHex(swatch: Matrix.Swatch, offsetX: number, offsetY: number) {
+    const r = figma.createText();
+    let label = swatch.hex.toUpperCase();
+    if (swatch.isUserDefined) label = '⭐️ ' + label;
+    if (swatch.isPinned) label = '📍 ' + label;
+    r.characters = label;
+    r.name = 'label2_' + swatch.id;
+    r.fontName = {family: 'Poppins', style: 'Regular'};
+    r.resize(swatchWidth, 36);
+    r.x = offsetX;
+    r.y = offsetY;
+    // r.fills =
+    //     swatch.WCAG2_W_45 || swatch.WCAG2_W_30
+    //         ? [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]
+    //         : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
+    // r.fontName =
+    //     swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
+    //         ? {family: 'Inter', style: 'Bold'}
+    //         : {family: 'Inter', style: 'Regular'};
+    r.fontSize = 20;
+    r.textAlignHorizontal = 'CENTER';
+    r.textAlignVertical = 'CENTER';
     return r;
 }
 
