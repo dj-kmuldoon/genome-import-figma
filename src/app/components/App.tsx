@@ -20,10 +20,11 @@ const App = ({}) => {
             let swatches = formatData(e.target.result);
 
             // let mapper = new SwatchMapModel(weightedTargets(0)) // non-optimized
-            // let mapper = new SwatchMapModel(weightedTargets(6)) // Genome
             // let mapper = new SwatchMapModel(weightedTargets(7)); // NewsKit
 
-            let mapper = new SwatchMapModel(weightedTargets(selection));
+            // let mapper = new SwatchMapModel(weightedTargets(selection));
+            let mapper = new SwatchMapModel(weightedTargets(6)); // Genome
+
             let grid = removeUndefinedWeightSwatches(mapSwatchesToTarget(swatches, mapper));
             grid = appendEffects(grid);
 
@@ -145,13 +146,12 @@ const App = ({}) => {
                 accept="application/JSON"
                 style={{display: 'none'}}
             />
-            <Dropdown
+            {/* <Dropdown
                 options={Options}
                 onChange={onSelect}
                 value={selection.toString()}
                 placeholder="Select an option"
-            />
-            ;{/* <button onClick={onOpen}>DO STUFF</button> */}
+            /> */}
             <button onClick={onCancel}>Cancel</button>
             <button id="create" onClick={onImport}>
                 Import

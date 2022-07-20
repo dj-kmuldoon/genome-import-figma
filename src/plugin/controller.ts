@@ -70,7 +70,8 @@ function updateSwatchLabel(swatch: Matrix.Swatch) {
     jjj.characters = 'HELLO';
 
     if (frameNode.children !== undefined) {
-        let r = frameNode.children[0] as TextNode;
+        let q = frameNode.children[0] as unknown;
+        let r = q as TextNode;
 
         let label = swatch.hex.toUpperCase();
         if (swatch.isUserDefined) label = '⭐️ ' + label;
