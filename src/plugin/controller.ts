@@ -36,6 +36,7 @@ figma.ui.onmessage = async (msg) => {
                 createPaintStylesBW();
             } else {
                 updateFigmaColorStyles(grid);
+                // updateFigmaSwatchLabels(grid)
             }
         }
 
@@ -64,30 +65,48 @@ function DJPopulateFigmaColorStyles(grid: Matrix.Grid) {
 function updateSwatchLabel(swatch: Matrix.Swatch) {
     let name = createFrameName(swatch);
     let frameNode = figma.currentPage.findOne((n) => n.name === name) as FrameNode;
-    let r = frameNode.children[0] as TextNode;
+    console.log('MY FRAME NODE CHILDREN IS ', frameNode.children);
+    let jjj = frameNode.children[0] as TextNode;
+    jjj.characters = 'HELLO';
 
-    let label = swatch.hex.toUpperCase();
-    if (swatch.isUserDefined) label = '⭐️ ' + label;
-    if (swatch.isPinned) label = '📍 ' + label;
-    r.characters = label;
+    if (frameNode.children !== undefined) {
+        let r = frameNode.children[0] as TextNode;
 
-    r.name = r.characters + ' (L*' + swatch.lightness + ')';
-    r.fills =
-        swatch.WCAG2_W_45 || swatch.WCAG2_W_30
-            ? [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]
-            : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
-    r.fontName =
-        swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
-            ? {family: 'Inter', style: 'Bold'}
-            : {family: 'Inter', style: 'Regular'};
-    return r;
+        let label = swatch.hex.toUpperCase();
+        if (swatch.isUserDefined) label = '⭐️ ' + label;
+        if (swatch.isPinned) label = '📍 ' + label;
+        r.characters = label;
+
+        r.name = r.characters + ' (L*' + swatch.lightness + ')';
+        r.fills =
+            swatch.WCAG2_W_45 || swatch.WCAG2_W_30
+                ? [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]
+                : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
+        r.fontName =
+            swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
+                ? {family: 'Inter', style: 'Bold'}
+                : {family: 'Inter', style: 'Regular'};
+        return r;
+    } else {
+        console.log('something undefined!', name);
+    }
 }
 
 function updateFigmaColorStyles(grid: Matrix.Grid) {
     grid.columns.forEach(function (column) {
         column.rows.forEach(function (swatch) {
-            let paintStyle = getPaintStyleByName(swatch)[0];
+            let name = createPaintStyleName(swatch);
+            let paintStyles = getPaintStyleByName(name);
+            let paintStyle = paintStyles[0];
+
             updatePaintStyle(swatch, paintStyle);
+        });
+    });
+}
+
+function updateFigmaSwatchLabels(grid: Matrix.Grid) {
+    grid.columns.forEach(function (column) {
+        column.rows.forEach(function (swatch) {
             updateSwatchLabel(swatch);
         });
     });
@@ -123,10 +142,9 @@ function populateFigmaColorStyles(grid: Matrix.Grid) {
     figma.viewport.scrollAndZoomIntoView(nodes);
 }
 
-function getPaintStyleByName(swatch: Matrix.Swatch) {
-    let n = createPaintStyleName(swatch);
+function getPaintStyleByName(name: string) {
     var r = localPaintStyles.filter((obj) => {
-        return obj.name === n;
+        return obj.name === name;
     });
     return r;
 }
@@ -165,6 +183,19 @@ function createPaintStylesBW() {
     r.fillStyleId = k.id;
     r.cornerRadius = 1000;
     r.resize(swatchWidth, swatchHeight);
+
+    let swatch = new Matrix.Swatch();
+    swatch.semantic = r.name;
+    swatch.id = 'K' + '100';
+    swatch.weight = '';
+    swatch.name = r.name + '100' + 'a';
+    swatch.isUserDefined = false;
+    swatch.isPinned = false;
+    swatch.hex = '#000000';
+
+    createSwatchLabelDescription(swatch, offsetX, offsetY + 212);
+    createSwatchLabelHex(swatch, offsetX, offsetY + 259);
+
     r.x = offsetX;
     r.y = offsetY;
     offsetX = offsetX + swatchHeight + rowGutter;
@@ -172,12 +203,24 @@ function createPaintStylesBW() {
     const w = figma.createPaintStyle();
     w.name = createBaseName() + '/' + 'neutral' + '/' + 'b&w' + '/' + 'white';
     w.paints = [{type: 'SOLID', color: hexToRgb('#FFFFFF')}];
-
     const rw = figma.createFrame();
     rw.name = 'white';
     rw.fillStyleId = w.id;
     rw.cornerRadius = 1000;
     rw.resize(swatchWidth, swatchHeight);
+
+    swatch = new Matrix.Swatch();
+    swatch.semantic = rw.name;
+    swatch.id = 'W' + '100';
+    swatch.weight = '';
+    swatch.name = rw.name + '100' + 'a';
+    swatch.isUserDefined = false;
+    swatch.isPinned = false;
+    swatch.hex = '#FFFFFF';
+
+    createSwatchLabelDescription(swatch, offsetX, offsetY + 212);
+    createSwatchLabelHex(swatch, offsetX, offsetY + 259);
+
     rw.x = offsetX;
     rw.y = offsetY;
     offsetX = offsetX + swatchHeight + rowGutter;
@@ -205,6 +248,20 @@ function createPaintStyleEffects() {
         r.fillStyleId = style.id;
         r.cornerRadius = 1000;
         r.resize(swatchWidth, swatchHeight);
+
+        let swatch = new Matrix.Swatch();
+        swatch.semantic = colorName;
+        swatch.id = 'K' + alpha;
+        swatch.alpha = alpha;
+        swatch.weight = zeroPad(alpha, 2) + 'a';
+        swatch.name = colorName + zeroPad(alpha, 2) + 'a';
+        swatch.isUserDefined = false;
+        swatch.isPinned = false;
+        swatch.hex = '#000000';
+
+        createSwatchLabelDescription(swatch, offsetX, offsetY + 212);
+        createSwatchLabelHex(swatch, offsetX, offsetY + 259);
+
         r.x = offsetX;
         r.y = offsetY;
 
@@ -234,6 +291,24 @@ function createPaintStyleEffects() {
         r.fillStyleId = style.id;
         r.cornerRadius = 1000;
         r.resize(swatchWidth, swatchHeight);
+
+        let swatch = new Matrix.Swatch();
+        swatch.semantic = colorName;
+        swatch.id = 'W' + alpha;
+        swatch.alpha = alpha;
+        swatch.weight = zeroPad(alpha, 2) + 'a';
+        swatch.isUserDefined = false;
+        swatch.isPinned = false;
+        swatch.hex = '#FFFFFF';
+
+        swatch.name = colorName + zeroPad(alpha, 2) + 'a';
+
+        let z = createSwatchLabelDescription(swatch, offsetX, offsetY + 212);
+        z.fills = [{type: 'SOLID', color: hexToRgb('#FFFFFF')}]; //
+
+        let y = createSwatchLabelHex(swatch, offsetX, offsetY + 259);
+        y.fills = [{type: 'SOLID', color: hexToRgb('#FFFFFF')}]; //
+
         r.x = offsetX;
         r.y = offsetY;
 
@@ -287,20 +362,19 @@ function createSwatchFrame(swatch: Matrix.Swatch, style: PaintStyle, x: number, 
 
 function createSwatchLabelDescription(swatch: Matrix.Swatch, offsetX: number, offsetY: number) {
     const r = figma.createText();
-    r.characters = swatch.semantic + swatch.weight.toString();
-    r.name = 'label1_' + swatch.id;
+
+    let label =
+        swatch.alpha === undefined
+            ? swatch.semantic + swatch.weight.toString()
+            : swatch.semantic + zeroPad(swatch.alpha, 2) + 'a';
+    r.characters = label;
+
+    r.name = 'label' + swatch.id + 'a';
     r.fontName = {family: 'Poppins', style: 'Medium'};
     r.resize(swatchWidth, 36);
     r.x = offsetX;
     r.y = offsetY;
-    // r.fills =
-    //     swatch.WCAG2_W_45 || swatch.WCAG2_W_30
-    //         ? [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]
-    //         : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
-    // r.fontName =
-    //     swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
-    //         ? {family: 'Inter', style: 'Bold'}
-    //         : {family: 'Inter', style: 'Regular'};
+    r.fills = [{type: 'SOLID', color: hexToRgb('#2E2E2E')}]; //
     r.fontSize = 20;
     r.textAlignHorizontal = 'CENTER';
     r.textAlignVertical = 'CENTER';
@@ -309,23 +383,23 @@ function createSwatchLabelDescription(swatch: Matrix.Swatch, offsetX: number, of
 
 function createSwatchLabelHex(swatch: Matrix.Swatch, offsetX: number, offsetY: number) {
     const r = figma.createText();
-    let label = swatch.hex.toUpperCase();
+    // let label = swatch.hex.toUpperCase();
+
+    let label =
+        swatch.alpha === undefined || swatch.alpha === 100
+            ? swatch.hex.toUpperCase()
+            : swatch.hex.toUpperCase() + ' (' + swatch.alpha + '%' + ')';
+    r.characters = label;
+
     if (swatch.isUserDefined) label = '⭐️ ' + label;
     if (swatch.isPinned) label = '📍 ' + label;
     r.characters = label;
-    r.name = 'label2_' + swatch.id;
+    r.name = 'label' + swatch.id + 'b';
     r.fontName = {family: 'Poppins', style: 'Regular'};
     r.resize(swatchWidth, 36);
     r.x = offsetX;
     r.y = offsetY;
-    // r.fills =
-    //     swatch.WCAG2_W_45 || swatch.WCAG2_W_30
-    //         ? [{type: 'SOLID', color: {r: 1, g: 1, b: 1}}]
-    //         : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
-    // r.fontName =
-    //     swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
-    //         ? {family: 'Inter', style: 'Bold'}
-    //         : {family: 'Inter', style: 'Regular'};
+    r.fills = [{type: 'SOLID', color: hexToRgb('#535353')}];
     r.fontSize = 20;
     r.textAlignHorizontal = 'CENTER';
     r.textAlignVertical = 'CENTER';
@@ -345,8 +419,8 @@ function createSwatchLabel(swatch: Matrix.Swatch) {
             : [{type: 'SOLID', color: {r: 0, g: 0, b: 0}}];
     r.fontName =
         swatch.WCAG2_W_30 && !swatch.WCAG2_W_45
-            ? {family: 'Inter', style: 'Bold'}
-            : {family: 'Inter', style: 'Regular'};
+            ? {family: 'Poppins', style: 'Medium'}
+            : {family: 'Poppins', style: 'Regular'};
     r.fontSize = 24;
     r.textAlignHorizontal = 'CENTER';
     r.textAlignVertical = 'CENTER';
